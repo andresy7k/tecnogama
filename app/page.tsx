@@ -1,23 +1,96 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { Header, type ViewKey } from '@/components/layout/header'
+import { DashboardView } from '@/components/dashboard/dashboard-view'
+import { NuevaOrdenForm } from '@/components/registro/nueva-orden-form'
+import { EquiposView } from '@/components/equipos/equipos-view'
+import { ConfigView } from '@/components/config/config-view'
+import { AUTOBACKUP_KEY } from '@/components/config/backup-section'
+import { useOrdenes } from '@/hooks/use-ordenes'
+import { useConfig } from '@/hooks/use-config'
+import type { Orden } from '@/lib/types'
+
 export default function Page() {
+  const [view, setView] = useState<ViewKey>('dashboard')
+  const [selected, setSelected] = useState<Orden | null>(null)
+  const {
+    ordenes,
+    status,
+    saveOrden,
+    deleteOrden,
+    updateEstado,
+    importOrdenes,
+  } = useOrdenes()
+  const { cfg, saveConfig } = useConfig()
+
+  // Autobackup on order changes
+  useEffect(() => {
+    if (!ordenes.length) return
+    try {
+      localStorage.setItem(
+        AUTOBACKUP_KEY,
+        JSON.stringify({ ordenes, config: cfg, ts: new Date().toISOString() }),
+      )
+    } catch {
+      /* ignore quota */
+    }
+  }, [ordenes, cfg])
+
+  const goEquipos = (o: Orden) => {
+    setSelected(o)
+    setView('equipos')
+  }
+
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-[color:light-dark(#fff,#000)] text-[color:light-dark(#000,#fff)]">
-      <svg
-        aria-hidden="true"
-        className="size-20"
-        fill="none"
-        viewBox="0 0 20 20"
-        xmlns="http://www.w3.org/2000/svg"
-        stroke="currentColor"
-        strokeWidth="0.5"
-      >
-        <path
-          d="M14.2 14.2H17V6.9375C17 4.76288 15.2371 3 13.0625 3H5.8V5.8M14.2 14.2V7.79063L7.79062 14.2H14.2ZM14.2 14.2V17H6.9375C4.76288 17 3 15.2371 3 13.0625V5.8H5.8M5.8 5.8V12.2313L12.2313 5.8H5.8Z"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <p className="absolute left-1/2 top-[calc(50%+56px)] -translate-x-1/2 whitespace-nowrap text-sm font-medium text-muted-foreground">
-        Your v0 generation will show here.
-      </p>
-    </main>
+    <div className="min-h-screen bg-background">
+      <Header
+        active={view}
+        onChange={setView}
+        status={status}
+        businessName={cfg.nombre}
+      />
+
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={view}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {view === 'dashboard' && (
+              <DashboardView
+                ordenes={ordenes}
+                onVer={goEquipos}
+                onNueva={() => setView('nueva')}
+              />
+            )}
+            {view === 'nueva' && (
+              <NuevaOrdenForm ordenes={ordenes} cfg={cfg} onSave={saveOrden} />
+            )}
+            {view === 'equipos' && (
+              <EquiposView
+                key={selected?.id ?? 'list'}
+                ordenes={ordenes}
+                cfg={cfg}
+                onUpdateEstado={updateEstado}
+                onDelete={deleteOrden}
+              />
+            )}
+            {view === 'config' && (
+              <ConfigView
+                cfg={cfg}
+                saveConfig={saveConfig}
+                ordenes={ordenes}
+                onImport={importOrdenes}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+    </div>
   )
 }
