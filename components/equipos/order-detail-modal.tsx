@@ -71,7 +71,19 @@ export function OrderDetailModal({
               </span>
             )}
           </div>
-          <span className="text-xs text-muted-foreground">{orden.fecha}</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <span>
+            <span className="font-semibold uppercase tracking-wider">Fecha de registro:</span>{' '}
+            {orden.fecha}
+          </span>
+          {orden.servicio.estado === 'Entregado' && orden.fechaEntrega && (
+            <span className="rounded-lg bg-brand-emerald/12 px-2.5 py-1 font-semibold text-emerald-700">
+              <span className="uppercase tracking-wider">Fecha de entrega:</span>{' '}
+              {orden.fechaEntrega}
+            </span>
+          )}
         </div>
 
         {orden.modificado && orden.fechaModificacion && (

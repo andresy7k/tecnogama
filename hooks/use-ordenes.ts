@@ -13,6 +13,7 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '@/lib/firebase'
+import { formatFecha } from '@/lib/format'
 import type { EstadoOrden, Orden } from '@/lib/types'
 
 export type ConnStatus = 'connecting' | 'online' | 'offline'
@@ -123,14 +124,22 @@ export function useOrdenes() {
 
   const updateEstado = useCallback(
     async (id: string, estado: EstadoOrden) => {
+      const patch: Partial<Orden> = { servicio: { ...ordenesRef.current.find(o => o.id === id)!.servicio, estado } }
+      if (estado === 'Entregado') {
+        patch.fechaEntrega = formatFecha(new Date())
+      }
       apply(
         ordenesRef.current.map((o) =>
-          o.id === id ? { ...o, servicio: { ...o.servicio, estado } } : o,
+          o.id === id ? { ...o, ...patch } : o,
         ),
       )
       if (isFirebaseConfigured && db) {
         try {
-          await updateDoc(doc(db, 'ordenes', id), { 'servicio.estado': estado })
+          const updateData: Record<string, string> = { 'servicio.estado': estado }
+          if (estado === 'Entregado') {
+            updateData.fechaEntrega = patch.fechaEntrega!
+          }
+          await updateDoc(doc(db, 'ordenes', id), updateData)
         } catch (err) {
           console.log('[v0] updateEstado error:', (err as Error).message)
         }

@@ -57,6 +57,7 @@ export interface Orden {
     obs: string
     estado: EstadoOrden
   }
+  fechaEntrega?: string
   modificado?: boolean
   fechaModificacion?: string
   log?: LogCambio[]
