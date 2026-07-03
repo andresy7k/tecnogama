@@ -99,11 +99,12 @@ export const ACCESORIOS = [
   'Cable USB',
   'Audífonos',
   'Funda',
-  'Vidrio templado',
+  'Simcard',
   'Batería externa',
   'Mouse',
   'Teclado',
   'Caja original',
+  'Memoria',
 ]
 
 export const PRIORIDADES: Prioridad[] = ['Normal', 'Alta', 'Urgente']
