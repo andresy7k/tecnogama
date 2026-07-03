@@ -19,6 +19,86 @@ function Dashed() {
   return <div className="my-2 border-t border-dashed border-neutral-300" />
 }
 
+function buildTicketHtml(orden: Orden, cfg: NegocioConfig): string {
+  const abonos = orden.servicio.abonos ?? []
+  const abonosHtml = abonos.length > 0
+    ? abonos.map((a, i) => `<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="font-weight:600;text-transform:uppercase;color:#6b7280">Abono ${i + 1}</span><span style="color:#111827">${formatPeso(a.monto)} — ${a.fecha}</span></div>`).join('') +
+      `<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="font-weight:600;text-transform:uppercase;color:#6b7280">Total abonado</span><span style="color:#111827">${formatPeso(calcTotalAbonos(abonos))}</span></div>`
+    : ''
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Ticket ${orden.id}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Courier New', monospace; font-size: 11px; color: #000; background: #fff; padding: 10px; width: 300px; }
+  .row { display: flex; justify-content: space-between; gap: 16px; padding: 2px 0; }
+  .label { font-weight: 600; text-transform: uppercase; color: #6b7280; font-size: 10px; }
+  .value { text-align: right; color: #111827; }
+  .dashed { margin: 8px 0; border-top: 1px dashed #d1d5db; }
+  .center { text-align: center; }
+  .bold { font-weight: bold; }
+  @media print { @page { margin: 5mm; size: 80mm auto; } }
+</style>
+</head>
+<body>
+  <div class="center">
+    ${cfg.logo ? `<img src="${cfg.logo}" style="max-height:48px;margin:0 auto 8px;display:block">` : ''}
+    <div class="bold" style="font-size:14px">${cfg.nombre}</div>
+    ${cfg.slogan ? `<div style="font-size:10px;color:#6b7280;margin-top:2px">${cfg.slogan}</div>` : ''}
+    <div style="font-size:10px;color:#4b5563;margin-top:4px">
+      ${cfg.telefono ? `<div>Tel: ${cfg.telefono}</div>` : ''}
+      ${cfg.direccion ? `<div>${cfg.direccion}</div>` : ''}
+      ${cfg.ciudad ? `<div>${cfg.ciudad}</div>` : ''}
+    </div>
+  </div>
+
+  <div class="dashed"></div>
+  <div class="center">
+    <div style="font-size:10px;text-transform:uppercase;color:#6b7280">Orden de servicio</div>
+    <div class="bold" style="font-size:18px;color:#4f46e5">${orden.id}</div>
+    <div style="font-size:10px;color:#6b7280">${orden.fecha}</div>
+  </div>
+
+  <div class="dashed"></div>
+  <div class="row"><span class="label">Cliente</span><span class="value">${orden.cliente.nombre}</span></div>
+  ${orden.cliente.doc ? `<div class="row"><span class="label">Doc</span><span class="value">${orden.cliente.doc}</span></div>` : ''}
+  <div class="row"><span class="label">Tel</span><span class="value">${orden.cliente.tel}</span></div>
+  ${orden.cliente.email ? `<div class="row"><span class="label">Email</span><span class="value">${orden.cliente.email}</span></div>` : ''}
+
+  <div class="dashed"></div>
+  <div class="row"><span class="label">Tipo</span><span class="value">${orden.equipo.tipo}</span></div>
+  <div class="row"><span class="label">Marca</span><span class="value">${orden.equipo.marca}</span></div>
+  <div class="row"><span class="label">Modelo</span><span class="value">${orden.equipo.modelo}</span></div>
+  ${orden.equipo.serial ? `<div class="row"><span class="label">Serial</span><span class="value">${orden.equipo.serial}</span></div>` : ''}
+  ${orden.equipo.color ? `<div class="row"><span class="label">Color</span><span class="value">${orden.equipo.color}</span></div>` : ''}
+  <div class="row"><span class="label">Estado</span><span class="value">${orden.equipo.estado}</span></div>
+  ${orden.equipo.accesorios.length > 0 ? `<div class="row"><span class="label">Accesorios</span><span class="value">${orden.equipo.accesorios.join(', ')}</span></div>` : ''}
+
+  <div class="dashed"></div>
+  <div style="font-size:11px">
+    <div class="bold" style="text-transform:uppercase;color:#6b7280;font-size:10px">Falla reportada</div>
+    <div style="margin-top:2px;color:#111827">${orden.falla.desc}</div>
+    ${orden.falla.diag ? `<div class="bold" style="text-transform:uppercase;color:#6b7280;font-size:10px;margin-top:4px">Diagnóstico</div><div style="margin-top:2px;color:#111827">${orden.falla.diag}</div>` : ''}
+  </div>
+
+  <div class="dashed"></div>
+  <div class="row"><span class="label">Costo reparación</span><span class="value">${formatPeso(orden.servicio.repCosto)}</span></div>
+  ${abonosHtml}
+  <div class="row"><span class="label">Estado pago</span><span class="value">${calcEstadoPago(orden.servicio.repCosto, abonos)}</span></div>
+  <div class="row"><span class="label">Restante</span><span class="value">${formatPeso(calcRestante(orden.servicio.repCosto, abonos))}</span></div>
+  ${orden.servicio.tecnico ? `<div class="row"><span class="label">Técnico</span><span class="value">${orden.servicio.tecnico}</span></div>` : ''}
+  <div class="row"><span class="label">Estado actual</span><span class="value">${orden.servicio.estado}</span></div>
+
+  ${cfg.ticketNota ? `<div class="dashed"></div><div class="center" style="font-size:9px;color:#6b7280;line-height:1.4">${cfg.ticketNota}</div>` : ''}
+  <div class="dashed"></div>
+  <div class="center" style="font-size:9px;color:#9ca3af">Generado con TechFix Pro</div>
+</body>
+</html>`
+}
+
 export function TicketModal({
   open,
   onClose,
@@ -31,6 +111,21 @@ export function TicketModal({
   cfg: NegocioConfig
 }) {
   if (!orden) return null
+
+  const abonos = orden.servicio.abonos ?? []
+
+  const handlePrint = () => {
+    const html = buildTicketHtml(orden, cfg)
+    const printWindow = window.open('', '_blank', 'width=400,height=600')
+    if (printWindow) {
+      printWindow.document.write(html)
+      printWindow.document.close()
+      printWindow.focus()
+      setTimeout(() => {
+        printWindow.print()
+      }, 300)
+    }
+  }
 
   return (
     <Modal open={open} onClose={onClose} size="max-w-sm" hideClose>
@@ -96,21 +191,20 @@ export function TicketModal({
 
         <Dashed />
         <Row label="Costo reparación" value={formatPeso(orden.servicio.repCosto)} />
-        <Row label="Abono inicial" value={formatPeso(orden.servicio.abonoInicial)} />
-        {orden.servicio.abonos && orden.servicio.abonos.length > 0 && (
+        {abonos.length > 0 && (
           <>
-            {orden.servicio.abonos.map((a, i) => (
+            {abonos.map((a, i) => (
               <Row
                 key={i}
                 label={`Abono ${i + 1}`}
                 value={`${formatPeso(a.monto)} — ${a.fecha}`}
               />
             ))}
-            <Row label="Total abonado" value={formatPeso(calcTotalAbonos(orden.servicio.abonos))} />
+            <Row label="Total abonado" value={formatPeso(calcTotalAbonos(abonos))} />
           </>
         )}
-        <Row label="Estado pago" value={calcEstadoPago(orden.servicio.repCosto, orden.servicio.abonos ?? [])} />
-        <Row label="Restante" value={formatPeso(calcRestante(orden.servicio.repCosto, orden.servicio.abonos ?? []))} />
+        <Row label="Estado pago" value={calcEstadoPago(orden.servicio.repCosto, abonos)} />
+        <Row label="Restante" value={formatPeso(calcRestante(orden.servicio.repCosto, abonos))} />
         <Row label="Técnico" value={orden.servicio.tecnico} />
         <Row label="Estado actual" value={orden.servicio.estado} />
 
@@ -137,7 +231,7 @@ export function TicketModal({
           Cerrar
         </button>
         <button
-          onClick={() => window.print()}
+          onClick={handlePrint}
           className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-brand-indigo to-brand-violet px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg"
         >
           <Printer className="size-4" />
