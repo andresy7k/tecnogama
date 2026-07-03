@@ -15,10 +15,10 @@ import {
   Receipt,
 } from 'lucide-react'
 import { Field, Input, Select, Textarea, Label } from '@/components/shared/form-field'
-import { PriorityBadge } from '@/components/shared/status-badge'
+import { PriorityBadge, PagoBadge } from '@/components/shared/status-badge'
 import { TicketModal } from '@/components/shared/ticket-modal'
 import { useToast } from '@/components/shared/toast'
-import { formatFecha, genId } from '@/lib/format'
+import { formatFecha, genId, calcEstadoPago, calcRestante, formatPeso } from '@/lib/format'
 import {
   ACCESORIOS,
   ESTADOS,
@@ -47,8 +47,8 @@ const emptyForm = {
   },
   falla: { desc: '', diag: '', clave: '', prioridad: 'Normal' as Prioridad },
   servicio: {
-    diagCosto: '',
     repCosto: '',
+    abonoInicial: '',
     tecnico: '',
     obs: '',
     estado: 'Recibido' as EstadoOrden,
@@ -188,7 +188,7 @@ export function NuevaOrdenForm({
   const s1 = Boolean(form.cliente.nombre && form.cliente.tel)
   const s2 = Boolean(form.equipo.tipo && form.equipo.marca && form.equipo.modelo)
   const s3 = Boolean(form.falla.desc)
-  const s4 = Boolean(form.servicio.diagCosto || form.servicio.repCosto || form.servicio.tecnico)
+  const s4 = Boolean(form.servicio.repCosto || form.servicio.abonoInicial || form.servicio.tecnico)
 
   const validate = () => {
     const e: Record<string, boolean> = {}
@@ -523,23 +523,7 @@ export function NuevaOrdenForm({
           onToggle={() => setOpenSection(openSection === 4 ? 0 : 4)}
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Field label="Valor diagnóstico" htmlFor="diagCosto">
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
-                  $
-                </span>
-                <Input
-                  id="diagCosto"
-                  type="number"
-                  min="0"
-                  value={form.servicio.diagCosto}
-                  onChange={(e) => set('servicio', 'diagCosto', e.target.value)}
-                  placeholder="0"
-                  className="pl-7"
-                />
-              </div>
-            </Field>
-            <Field label="Valor reparación estimado" htmlFor="repCosto">
+            <Field label="Costo reparación" htmlFor="repCosto">
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
                   $
@@ -555,6 +539,22 @@ export function NuevaOrdenForm({
                 />
               </div>
             </Field>
+            <Field label="Abono Inicial" htmlFor="abonoInicial">
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
+                  $
+                </span>
+                <Input
+              id="abonoInicial"
+                  type="number"
+                  min="0"
+                  value={form.servicio.abonoInicial}
+                  onChange={(e) => set('servicio', 'abonoInicial', e.target.value)}
+                  placeholder="0"
+                  className="pl-7"
+                />
+              </div>
+            </Field>
             <Field label="Técnico asignado" htmlFor="tecnico">
               <Input
                 id="tecnico"
@@ -564,6 +564,14 @@ export function NuevaOrdenForm({
               />
             </Field>
           </div>
+          {(form.servicio.repCosto || form.servicio.abonoInicial) && (
+            <div className="mt-4 flex items-center gap-4 rounded-xl border border-border bg-background/50 px-4 py-3">
+              <PagoBadge estado={calcEstadoPago(form.servicio.repCosto, form.servicio.abonoInicial)} />
+              <span className="text-sm text-muted-foreground">
+                Restante: <span className="font-bold text-card-foreground">{formatPeso(calcRestante(form.servicio.repCosto, form.servicio.abonoInicial))}</span>
+              </span>
+            </div>
+          )}
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Observaciones para el cliente" htmlFor="obsCliente">
               <Textarea

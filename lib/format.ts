@@ -1,4 +1,4 @@
-import type { EstadoOrden, Orden, Prioridad } from './types'
+import type { EstadoOrden, EstadoPago, Orden, Prioridad } from './types'
 
 export function formatPeso(value: string | number): string {
   const num =
@@ -44,4 +44,31 @@ export const prioridadStyles: Record<Prioridad, string> = {
   Normal: 'bg-muted text-muted-foreground',
   Alta: 'bg-brand-amber/15 text-amber-700',
   Urgente: 'bg-brand-danger/12 text-red-600',
+}
+
+export function parseNum(value: string | number): number {
+  const num =
+    typeof value === 'number' ? value : Number(String(value).replace(/[^0-9.-]/g, ''))
+  return Number.isFinite(num) ? num : 0
+}
+
+export function calcEstadoPago(repCosto: string, abonoInicial: string): EstadoPago {
+  const total = parseNum(repCosto)
+  const abono = parseNum(abonoInicial)
+  if (total <= 0 || abono <= 0) return 'No pagado'
+  if (abono >= total) return 'Pagado'
+  return 'Pago parcial'
+}
+
+export function calcRestante(repCosto: string, abonoInicial: string): number {
+  const total = parseNum(repCosto)
+  const abono = parseNum(abonoInicial)
+  const restante = total - abono
+  return restante > 0 ? restante : 0
+}
+
+export const estadoPagoStyles: Record<EstadoPago, string> = {
+  'No pagado': 'bg-red-100 text-red-700',
+  'Pago parcial': 'bg-brand-amber/15 text-amber-700',
+  Pagado: 'bg-brand-emerald/12 text-emerald-700',
 }

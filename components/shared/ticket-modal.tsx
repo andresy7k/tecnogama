@@ -2,7 +2,7 @@
 
 import { Printer, X } from 'lucide-react'
 import { Modal } from './modal'
-import { formatPeso } from '@/lib/format'
+import { formatPeso, calcEstadoPago, calcRestante } from '@/lib/format'
 import type { NegocioConfig, Orden } from '@/lib/types'
 
 function Row({ label, value }: { label: string; value?: string }) {
@@ -95,8 +95,10 @@ export function TicketModal({
         <Row label="Prioridad" value={orden.falla.prioridad} />
 
         <Dashed />
-        <Row label="Diagnóstico" value={formatPeso(orden.servicio.diagCosto)} />
-        <Row label="Reparación est." value={formatPeso(orden.servicio.repCosto)} />
+        <Row label="Costo reparación" value={formatPeso(orden.servicio.repCosto)} />
+        <Row label="Abono" value={formatPeso(orden.servicio.abonoInicial)} />
+        <Row label="Estado pago" value={calcEstadoPago(orden.servicio.repCosto, orden.servicio.abonoInicial)} />
+        <Row label="Restante" value={formatPeso(calcRestante(orden.servicio.repCosto, orden.servicio.abonoInicial))} />
         <Row label="Técnico" value={orden.servicio.tecnico} />
         <Row label="Estado actual" value={orden.servicio.estado} />
 

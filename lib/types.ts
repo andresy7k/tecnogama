@@ -5,6 +5,8 @@ export type EstadoOrden =
   | 'Listo'
   | 'Entregado'
 
+export type EstadoPago = 'No pagado' | 'Pago parcial' | 'Pagado'
+
 export type Prioridad = 'Normal' | 'Alta' | 'Urgente'
 
 export interface Orden {
@@ -34,8 +36,8 @@ export interface Orden {
     prioridad: Prioridad
   }
   servicio: {
-    diagCosto: string
     repCosto: string
+    abonoInicial: string
     tecnico: string
     obs: string
     estado: EstadoOrden

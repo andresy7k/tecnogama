@@ -2,9 +2,9 @@
 
 import { Receipt } from 'lucide-react'
 import { Modal } from '@/components/shared/modal'
-import { StatusBadge, PriorityBadge } from '@/components/shared/status-badge'
+import { StatusBadge, PriorityBadge, PagoBadge } from '@/components/shared/status-badge'
 import { Select } from '@/components/shared/form-field'
-import { formatPeso } from '@/lib/format'
+import { formatPeso, calcEstadoPago, calcRestante } from '@/lib/format'
 import { ESTADOS, type EstadoOrden, type Orden } from '@/lib/types'
 
 function Detail({ label, value }: { label: string; value?: string }) {
@@ -83,8 +83,17 @@ export function OrderDetailModal({
             <Detail label="Prioridad" value={orden.falla.prioridad} />
           </Group>
           <Group title="Costos y servicio">
-            <Detail label="Diagnóstico" value={formatPeso(orden.servicio.diagCosto)} />
-            <Detail label="Reparación est." value={formatPeso(orden.servicio.repCosto)} />
+            <Detail label="Costo reparación" value={formatPeso(orden.servicio.repCosto)} />
+            <Detail label="Abono" value={formatPeso(orden.servicio.abonoInicial)} />
+            <div>
+              <dt className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Estado pago
+              </dt>
+              <dd className="mt-0.5">
+                <PagoBadge estado={calcEstadoPago(orden.servicio.repCosto, orden.servicio.abonoInicial)} />
+              </dd>
+            </div>
+            <Detail label="Restante" value={formatPeso(calcRestante(orden.servicio.repCosto, orden.servicio.abonoInicial))} />
             <Detail label="Técnico" value={orden.servicio.tecnico} />
             <Detail label="Obs. cliente" value={orden.servicio.obs} />
           </Group>
