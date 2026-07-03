@@ -791,57 +791,34 @@ export function NuevaOrdenForm({
           </div>
 
           {/* Resumen de pago */}
-          {(form.servicio.repCosto || form.servicio.abonoInicial || abonos.length > 0) && (
-            <div className="mt-4 flex items-center gap-4 rounded-xl border border-border bg-background/50 px-4 py-3">
-              <PagoBadge
-                estado={calcEstadoPago(
-                  form.servicio.repCosto,
-                  isEdit
-                    ? abonos
-                    : [
-                        ...abonos,
-                        ...(Number(form.servicio.abonoInicial) > 0
-                          ? [{
-                              monto: Number(form.servicio.abonoInicial),
-                              fecha: '',
-                              fechaISO: '',
-                            }]
-                          : []),
-                      ],
-                )}
-              />
-              <span className="text-sm text-muted-foreground">
-                Abonado:{' '}
-                <span className="font-bold text-card-foreground">
-                  {formatPeso(
-                    calcTotalAbonos(abonos) + (isEdit ? 0 : Number(form.servicio.abonoInicial) || 0),
-                  )}
+          {(form.servicio.repCosto || form.servicio.abonoInicial || abonos.length > 0) && (() => {
+            const totalAbonado = calcTotalAbonos(abonos) + (isEdit ? 0 : (Number(form.servicio.abonoInicial) || 0))
+            const totalRep = Number(form.servicio.repCosto) || 0
+            const restante = totalRep - totalAbonado
+            const estadoPago = totalRep <= 0 || totalAbonado <= 0
+              ? ('No pagado' as const)
+              : totalAbonado >= totalRep
+                ? ('Pagado' as const)
+                : ('Pago parcial' as const)
+
+            return (
+              <div className="mt-4 flex items-center gap-4 rounded-xl border border-border bg-background/50 px-4 py-3">
+                <PagoBadge estado={estadoPago} />
+                <span className="text-sm text-muted-foreground">
+                  Abonado:{' '}
+                  <span className="font-bold text-card-foreground">
+                    {formatPeso(totalAbonado)}
+                  </span>
                 </span>
-              </span>
-              <span className="text-sm text-muted-foreground">
-                Restante:{' '}
-                <span className="font-bold text-card-foreground">
-                  {formatPeso(
-                    calcRestante(
-                      form.servicio.repCosto,
-                      isEdit
-                        ? abonos
-                        : [
-                            ...abonos,
-                            ...(Number(form.servicio.abonoInicial) > 0
-                              ? [{
-                                  monto: Number(form.servicio.abonoInicial),
-                                  fecha: '',
-                                  fechaISO: '',
-                                }]
-                              : []),
-                          ],
-                    ),
-                  )}
+                <span className="text-sm text-muted-foreground">
+                  Restante:{' '}
+                  <span className="font-bold text-card-foreground">
+                    {formatPeso(restante > 0 ? restante : 0)}
+                  </span>
                 </span>
-              </span>
-            </div>
-          )}
+              </div>
+            )
+          })()}
 
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Observaciones para el cliente" htmlFor="obsCliente">
