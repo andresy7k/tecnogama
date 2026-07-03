@@ -3,18 +3,23 @@
 import { motion } from 'motion/react'
 import { Inbox, Eye, PlusCircle } from 'lucide-react'
 import { StatusBadge } from '@/components/shared/status-badge'
-import type { Orden } from '@/lib/types'
+import type { EstadoOrden, Orden } from '@/lib/types'
 
 export function RecentOrders({
   ordenes,
+  filterStatus,
   onVer,
   onNueva,
 }: {
   ordenes: Orden[]
+  filterStatus?: EstadoOrden | null
   onVer: (o: Orden) => void
   onNueva: () => void
 }) {
-  const recent = ordenes.slice(0, 5)
+  const filtered = filterStatus
+    ? ordenes.filter((o) => o.servicio.estado === filterStatus)
+    : ordenes
+  const recent = filtered.slice(0, 5)
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -23,7 +28,7 @@ export function RecentOrders({
           Órdenes recientes
         </h2>
         <span className="text-xs font-medium text-muted-foreground">
-          Últimas {recent.length}
+          {filterStatus ? `${filterStatus} · ` : ''}Últimas {recent.length}
         </span>
       </div>
 

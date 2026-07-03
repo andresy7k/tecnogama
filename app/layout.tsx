@@ -11,7 +11,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'TechFix Pro — Gestión de Reparaciones',
+  title: 'Tecnogama — Gestión de Reparaciones',
   description:
     'Sistema de gestión para taller de reparación de celulares y computadores. Registra órdenes, genera tiquetes e imprime recibos.',
   generator: 'v0.app',

@@ -35,21 +35,27 @@ export function StatCard({
   icon: Icon,
   color,
   index,
+  active,
+  onClick,
 }: {
   label: string
   value: number
   icon: LucideIcon
   color: keyof typeof gradients
   index: number
+  active?: boolean
+  onClick?: () => void
 }) {
   const count = useCountUp(value)
   return (
-    <motion.div
+    <motion.button
+      type="button"
+      onClick={onClick}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06, duration: 0.4 }}
       whileHover={{ y: -4 }}
-      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradients[color]} p-5 shadow-lg`}
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradients[color]} p-5 text-left shadow-lg transition-all ${active ? 'ring-2 ring-white ring-offset-2' : ''}`}
     >
       <div className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-white/15 blur-xl" />
       <div className="relative flex items-start justify-between">
@@ -63,6 +69,6 @@ export function StatCard({
           <Icon className="size-5 text-white" />
         </div>
       </div>
-    </motion.div>
+    </motion.button>
   )
 }

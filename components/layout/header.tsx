@@ -14,7 +14,7 @@ import type { ConnStatus } from '@/hooks/use-ordenes'
 export type ViewKey = 'dashboard' | 'nueva' | 'equipos' | 'config' | 'editar'
 
 const NAV: { key: ViewKey; label: string; icon: typeof LayoutDashboard }[] = [
-  { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { key: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
   { key: 'nueva', label: 'Nueva Orden', icon: PlusCircle },
   { key: 'equipos', label: 'Equipos', icon: ClipboardList },
   { key: 'config', label: 'Configurar', icon: Settings },
@@ -42,7 +42,7 @@ export function Header({
             </div>
             <div className="leading-tight">
               <p className="text-sm font-bold tracking-tight text-white">
-                {businessName || 'TechFix Pro'}
+                {businessName || 'Tecnogama'}
               </p>
               <p className="hidden text-[10px] font-medium uppercase tracking-wider text-white/40 sm:block">
                 Gestión de reparaciones

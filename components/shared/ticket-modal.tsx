@@ -94,7 +94,7 @@ function buildTicketHtml(orden: Orden, cfg: NegocioConfig): string {
 
   ${cfg.ticketNota ? `<div class="dashed"></div><div class="center" style="font-size:9px;color:#6b7280;line-height:1.4">${cfg.ticketNota}</div>` : ''}
   <div class="dashed"></div>
-  <div class="center" style="font-size:9px;color:#9ca3af">Generado con TechFix Pro</div>
+  <div class="center" style="font-size:9px;color:#9ca3af">Generado con Tecnogama</div>
 </body>
 </html>`
 }
@@ -218,7 +218,7 @@ export function TicketModal({
         )}
         <Dashed />
         <p className="text-center text-[10px] text-neutral-400">
-          Generado con TechFix Pro
+          Generado con Tecnogama
         </p>
       </div>
 

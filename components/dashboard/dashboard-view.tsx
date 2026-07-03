@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import {
   ClipboardList,
@@ -10,11 +11,12 @@ import {
   CalendarDays,
   CalendarRange,
   Wallet,
+  X,
 } from 'lucide-react'
 import { StatCard } from './stat-card'
 import { RecentOrders } from './recent-orders'
 import { formatPeso, parseNum, calcTotalAbonos } from '@/lib/format'
-import type { Orden } from '@/lib/types'
+import type { EstadoOrden, Orden } from '@/lib/types'
 
 function isToday(iso: string) {
   const d = new Date(iso)
@@ -41,6 +43,8 @@ export function DashboardView({
   onVer: (o: Orden) => void
   onNueva: () => void
 }) {
+  const [filterStatus, setFilterStatus] = useState<EstadoOrden | null>(null)
+
   const total = ordenes.length
   const enReparacion = ordenes.filter(
     (o) => o.servicio.estado === 'Reparando',
@@ -73,15 +77,66 @@ export function DashboardView({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total órdenes" value={total} icon={ClipboardList} color="indigo" index={0} />
-        <StatCard label="En reparación" value={enReparacion} icon={Wrench} color="amber" index={1} />
-        <StatCard label="Listos para entregar" value={listos} icon={PackageCheck} color="emerald" index={2} />
-        <StatCard label="Entregados" value={entregados} icon={CheckCheck} color="violet" index={3} />
+        <StatCard
+          label="Total órdenes"
+          value={total}
+          icon={ClipboardList}
+          color="indigo"
+          index={0}
+          active={filterStatus === null}
+          onClick={() => setFilterStatus(null)}
+        />
+        <StatCard
+          label="En reparación"
+          value={enReparacion}
+          icon={Wrench}
+          color="amber"
+          index={1}
+          active={filterStatus === 'Reparando'}
+          onClick={() => setFilterStatus(filterStatus === 'Reparando' ? null : 'Reparando')}
+        />
+        <StatCard
+          label="Listos para entregar"
+          value={listos}
+          icon={PackageCheck}
+          color="emerald"
+          index={2}
+          active={filterStatus === 'Listo'}
+          onClick={() => setFilterStatus(filterStatus === 'Listo' ? null : 'Listo')}
+        />
+        <StatCard
+          label="Entregados"
+          value={entregados}
+          icon={CheckCheck}
+          color="violet"
+          index={3}
+          active={filterStatus === 'Entregado'}
+          onClick={() => setFilterStatus(filterStatus === 'Entregado' ? null : 'Entregado')}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <RecentOrders ordenes={ordenes} onVer={onVer} onNueva={onNueva} />
+          {filterStatus && (
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-sm font-semibold text-muted-foreground">
+                Filtrando por: <span className="text-foreground">{filterStatus}</span>
+              </span>
+              <button
+                onClick={() => setFilterStatus(null)}
+                className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+              >
+                <X className="size-3" />
+                Ver todos
+              </button>
+            </div>
+          )}
+          <RecentOrders
+            ordenes={ordenes}
+            filterStatus={filterStatus}
+            onVer={onVer}
+            onNueva={onNueva}
+          />
         </div>
 
         <div className="flex flex-col gap-4">

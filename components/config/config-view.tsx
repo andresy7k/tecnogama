@@ -91,7 +91,7 @@ export function ConfigView({
                   id="nombre"
                   value={draft.nombre}
                   onChange={(e) => set('nombre', e.target.value)}
-                  placeholder="TechFix Pro"
+                  placeholder="Tecnogama"
                 />
               </Field>
               <Field label="Slogan" htmlFor="slogan" className="sm:col-span-2">

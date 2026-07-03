@@ -108,7 +108,7 @@ export const ACCESORIOS = [
 export const PRIORIDADES: Prioridad[] = ['Normal', 'Alta', 'Urgente']
 
 export const DEFAULT_CONFIG: NegocioConfig = {
-  nombre: 'TechFix Pro',
+  nombre: 'Tecnogama',
   slogan: 'Reparación profesional de celulares y computadores',
   ticketNota:
     'Conserve este tiquete. Es indispensable para reclamar su equipo. Pasados 60 días sin reclamar, el equipo se considera abandonado.',
