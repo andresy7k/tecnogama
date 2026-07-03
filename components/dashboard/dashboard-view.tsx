@@ -43,7 +43,7 @@ export function DashboardView({
 }) {
   const total = ordenes.length
   const enReparacion = ordenes.filter(
-    (o) => o.servicio.estado === 'Reparando' || o.servicio.estado === 'Diagnóstico',
+    (o) => o.servicio.estado === 'Reparando',
   ).length
   const listos = ordenes.filter((o) => o.servicio.estado === 'Listo').length
   const entregados = ordenes.filter((o) => o.servicio.estado === 'Entregado').length

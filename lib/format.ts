@@ -34,7 +34,6 @@ export function genId(ordenes: Orden[]): string {
 
 export const estadoStyles: Record<EstadoOrden, string> = {
   Recibido: 'bg-brand-indigo/10 text-brand-indigo',
-  Diagnóstico: 'bg-brand-amber/15 text-amber-700',
   Reparando: 'bg-brand-violet/12 text-brand-violet',
   Listo: 'bg-brand-emerald/12 text-emerald-700',
   Entregado: 'bg-muted text-muted-foreground',

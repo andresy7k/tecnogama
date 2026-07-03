@@ -1,6 +1,5 @@
 export type EstadoOrden =
   | 'Recibido'
-  | 'Diagnóstico'
   | 'Reparando'
   | 'Listo'
   | 'Entregado'
@@ -76,7 +75,6 @@ export interface NegocioConfig {
 
 export const ESTADOS: EstadoOrden[] = [
   'Recibido',
-  'Diagnóstico',
   'Reparando',
   'Listo',
   'Entregado',
