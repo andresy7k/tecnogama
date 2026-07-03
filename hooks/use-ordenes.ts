@@ -139,6 +139,23 @@ export function useOrdenes() {
     [apply],
   )
 
+  const updateOrden = useCallback(
+    async (orden: Orden) => {
+      apply(
+        ordenesRef.current.map((o) => (o.id === orden.id ? orden : o)),
+      )
+      if (isFirebaseConfigured && db) {
+        try {
+          await setDoc(doc(db, 'ordenes', orden.id), orden)
+        } catch (err) {
+          console.log('[v0] updateOrden error:', (err as Error).message)
+          throw err
+        }
+      }
+    },
+    [apply],
+  )
+
   const importOrdenes = useCallback(
     async (incoming: Orden[], mode: 'replace' | 'merge') => {
       let merged: Orden[]
@@ -171,6 +188,7 @@ export function useOrdenes() {
     saveOrden,
     deleteOrden,
     updateEstado,
+    updateOrden,
     importOrdenes,
   }
 }

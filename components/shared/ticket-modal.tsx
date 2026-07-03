@@ -2,7 +2,7 @@
 
 import { Printer, X } from 'lucide-react'
 import { Modal } from './modal'
-import { formatPeso, calcEstadoPago, calcRestante } from '@/lib/format'
+import { formatPeso, calcEstadoPago, calcRestante, calcTotalAbonos } from '@/lib/format'
 import type { NegocioConfig, Orden } from '@/lib/types'
 
 function Row({ label, value }: { label: string; value?: string }) {
@@ -96,9 +96,21 @@ export function TicketModal({
 
         <Dashed />
         <Row label="Costo reparación" value={formatPeso(orden.servicio.repCosto)} />
-        <Row label="Abono" value={formatPeso(orden.servicio.abonoInicial)} />
-        <Row label="Estado pago" value={calcEstadoPago(orden.servicio.repCosto, orden.servicio.abonoInicial)} />
-        <Row label="Restante" value={formatPeso(calcRestante(orden.servicio.repCosto, orden.servicio.abonoInicial))} />
+        <Row label="Abono inicial" value={formatPeso(orden.servicio.abonoInicial)} />
+        {orden.servicio.abonos && orden.servicio.abonos.length > 0 && (
+          <>
+            {orden.servicio.abonos.map((a, i) => (
+              <Row
+                key={i}
+                label={`Abono ${i + 1}`}
+                value={`${formatPeso(a.monto)} — ${a.fecha}`}
+              />
+            ))}
+            <Row label="Total abonado" value={formatPeso(calcTotalAbonos(orden.servicio.abonos))} />
+          </>
+        )}
+        <Row label="Estado pago" value={calcEstadoPago(orden.servicio.repCosto, orden.servicio.abonos ?? [])} />
+        <Row label="Restante" value={formatPeso(calcRestante(orden.servicio.repCosto, orden.servicio.abonos ?? []))} />
         <Row label="Técnico" value={orden.servicio.tecnico} />
         <Row label="Estado actual" value={orden.servicio.estado} />
 

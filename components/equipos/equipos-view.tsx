@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Search, Eye, Pencil, Receipt, Trash2, PackageSearch } from 'lucide-react'
-import { StatusBadge } from '@/components/shared/status-badge'
+import { StatusBadge, PagoBadge } from '@/components/shared/status-badge'
 import { OrderDetailModal } from './order-detail-modal'
 import { ChangeStatusPopover } from './change-status-popover'
 import { TicketModal } from '@/components/shared/ticket-modal'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { useToast } from '@/components/shared/toast'
+import { calcEstadoPago } from '@/lib/format'
 import { ESTADOS, type EstadoOrden, type NegocioConfig, type Orden } from '@/lib/types'
 
 function useDebounced<T>(value: T, delay = 300) {
@@ -25,11 +26,13 @@ export function EquiposView({
   cfg,
   onUpdateEstado,
   onDelete,
+  onEditar,
 }: {
   ordenes: Orden[]
   cfg: NegocioConfig
   onUpdateEstado: (id: string, e: EstadoOrden) => void
   onDelete: (id: string) => void
+  onEditar: (o: Orden) => void
 }) {
   const { toast } = useToast()
   const [searchInput, setSearchInput] = useState('')
@@ -137,6 +140,7 @@ export function EquiposView({
                   <th className="px-4 py-3 font-semibold">Equipo</th>
                   <th className="px-4 py-3 font-semibold">Falla</th>
                   <th className="px-4 py-3 font-semibold">Estado</th>
+                  <th className="px-4 py-3 font-semibold">Pago</th>
                   <th className="px-4 py-3 text-right font-semibold">Acciones</th>
                 </tr>
               </thead>
@@ -179,6 +183,14 @@ export function EquiposView({
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge estado={o.servicio.estado} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <PagoBadge
+                          estado={calcEstadoPago(
+                            o.servicio.repCosto,
+                            o.servicio.abonos ?? [],
+                          )}
+                        />
                       </td>
                       <td className="px-4 py-3">
                         <div className="relative flex items-center justify-end gap-1">
@@ -229,6 +241,10 @@ export function EquiposView({
         onTicket={(o) => {
           setDetail(null)
           setTicket(o)
+        }}
+        onEditar={(o) => {
+          setDetail(null)
+          onEditar(o)
         }}
       />
       <TicketModal

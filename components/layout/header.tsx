@@ -11,7 +11,7 @@ import {
 import { FirebaseStatus } from './firebase-status'
 import type { ConnStatus } from '@/hooks/use-ordenes'
 
-export type ViewKey = 'dashboard' | 'nueva' | 'equipos' | 'config'
+export type ViewKey = 'dashboard' | 'nueva' | 'equipos' | 'config' | 'editar'
 
 const NAV: { key: ViewKey; label: string; icon: typeof LayoutDashboard }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },

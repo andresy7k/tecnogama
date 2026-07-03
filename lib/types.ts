@@ -9,10 +9,25 @@ export type EstadoPago = 'No pagado' | 'Pago parcial' | 'Pagado'
 
 export type Prioridad = 'Normal' | 'Alta' | 'Urgente'
 
+export interface Abono {
+  monto: number
+  fecha: string
+  fechaISO: string
+  nota?: string
+}
+
+export interface LogCambio {
+  campo: string
+  valorAnterior: string
+  nuevoValor: string
+  fecha: string
+  fechaISO: string
+}
+
 export interface Orden {
-  id: string // "OT-00001"
-  fecha: string // "15/1/2025, 10:30:00 a. m."
-  fechaISO: string // ISO 8601 for ordering
+  id: string
+  fecha: string
+  fechaISO: string
   cliente: {
     nombre: string
     doc: string
@@ -25,7 +40,7 @@ export interface Orden {
     modelo: string
     serial: string
     color: string
-    estado: string // estético
+    estado: string
     accesorios: string[]
     obsFisica: string
   }
@@ -38,10 +53,14 @@ export interface Orden {
   servicio: {
     repCosto: string
     abonoInicial: string
+    abonos: Abono[]
     tecnico: string
     obs: string
     estado: EstadoOrden
   }
+  modificado?: boolean
+  fechaModificacion?: string
+  log?: LogCambio[]
 }
 
 export interface NegocioConfig {

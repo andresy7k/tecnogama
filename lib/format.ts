@@ -1,4 +1,4 @@
-import type { EstadoOrden, EstadoPago, Orden, Prioridad } from './types'
+import type { Abono, EstadoOrden, EstadoPago, Orden, Prioridad } from './types'
 
 export function formatPeso(value: string | number): string {
   const num =
@@ -52,18 +52,22 @@ export function parseNum(value: string | number): number {
   return Number.isFinite(num) ? num : 0
 }
 
-export function calcEstadoPago(repCosto: string, abonoInicial: string): EstadoPago {
+export function calcTotalAbonos(abonos: Abono[]): number {
+  return abonos.reduce((sum, a) => sum + a.monto, 0)
+}
+
+export function calcEstadoPago(repCosto: string, abonos: Abono[]): EstadoPago {
   const total = parseNum(repCosto)
-  const abono = parseNum(abonoInicial)
-  if (total <= 0 || abono <= 0) return 'No pagado'
-  if (abono >= total) return 'Pagado'
+  const abonado = calcTotalAbonos(abonos)
+  if (total <= 0 || abonado <= 0) return 'No pagado'
+  if (abonado >= total) return 'Pagado'
   return 'Pago parcial'
 }
 
-export function calcRestante(repCosto: string, abonoInicial: string): number {
+export function calcRestante(repCosto: string, abonos: Abono[]): number {
   const total = parseNum(repCosto)
-  const abono = parseNum(abonoInicial)
-  const restante = total - abono
+  const abonado = calcTotalAbonos(abonos)
+  const restante = total - abonado
   return restante > 0 ? restante : 0
 }
 

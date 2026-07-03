@@ -1,10 +1,15 @@
 'use client'
 
-import { Receipt } from 'lucide-react'
+import { Pencil, Receipt } from 'lucide-react'
 import { Modal } from '@/components/shared/modal'
 import { StatusBadge, PriorityBadge, PagoBadge } from '@/components/shared/status-badge'
 import { Select } from '@/components/shared/form-field'
-import { formatPeso, calcEstadoPago, calcRestante } from '@/lib/format'
+import {
+  formatPeso,
+  calcEstadoPago,
+  calcRestante,
+  calcTotalAbonos,
+} from '@/lib/format'
 import { ESTADOS, type EstadoOrden, type Orden } from '@/lib/types'
 
 function Detail({ label, value }: { label: string; value?: string }) {
@@ -36,14 +41,20 @@ export function OrderDetailModal({
   onClose,
   onChangeEstado,
   onTicket,
+  onEditar,
 }: {
   orden: Orden | null
   open: boolean
   onClose: () => void
   onChangeEstado: (id: string, e: EstadoOrden) => void
   onTicket: (o: Orden) => void
+  onEditar: (o: Orden) => void
 }) {
   if (!orden) return null
+
+  const abonos = orden.servicio.abonos ?? []
+  const log = orden.log ?? []
+
   return (
     <Modal open={open} onClose={onClose} title={`Orden ${orden.id}`} size="max-w-3xl">
       <div className="flex flex-col gap-4 p-6">
@@ -54,9 +65,20 @@ export function OrderDetailModal({
             </span>
             <StatusBadge estado={orden.servicio.estado} />
             <PriorityBadge prioridad={orden.falla.prioridad} />
+            {orden.modificado && (
+              <span className="inline-flex items-center rounded-full bg-brand-amber/15 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                Modificada
+              </span>
+            )}
           </div>
           <span className="text-xs text-muted-foreground">{orden.fecha}</span>
         </div>
+
+        {orden.modificado && orden.fechaModificacion && (
+          <p className="text-xs text-muted-foreground">
+            Última modificación: {orden.fechaModificacion}
+          </p>
+        )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Group title="Cliente">
@@ -84,20 +106,71 @@ export function OrderDetailModal({
           </Group>
           <Group title="Costos y servicio">
             <Detail label="Costo reparación" value={formatPeso(orden.servicio.repCosto)} />
-            <Detail label="Abono" value={formatPeso(orden.servicio.abonoInicial)} />
+            <Detail label="Abono inicial" value={formatPeso(orden.servicio.abonoInicial)} />
             <div>
               <dt className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Estado pago
               </dt>
               <dd className="mt-0.5">
-                <PagoBadge estado={calcEstadoPago(orden.servicio.repCosto, orden.servicio.abonoInicial)} />
+                <PagoBadge
+                  estado={calcEstadoPago(orden.servicio.repCosto, abonos)}
+                />
               </dd>
             </div>
-            <Detail label="Restante" value={formatPeso(calcRestante(orden.servicio.repCosto, orden.servicio.abonoInicial))} />
+            <Detail
+              label="Total abonado"
+              value={formatPeso(calcTotalAbonos(abonos))}
+            />
+            <Detail
+              label="Restante"
+              value={formatPeso(calcRestante(orden.servicio.repCosto, abonos))}
+            />
             <Detail label="Técnico" value={orden.servicio.tecnico} />
             <Detail label="Obs. cliente" value={orden.servicio.obs} />
           </Group>
         </div>
+
+        {/* Abonos */}
+        {abonos.length > 0 && (
+          <Group title={`Abonos (${abonos.length})`}>
+            {abonos.map((a, i) => (
+              <div key={i} className="col-span-2 flex items-center justify-between border-b border-border pb-2 last:border-0 last:pb-0">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-card-foreground">
+                    {formatPeso(a.monto)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{a.fecha}</span>
+                  {a.nota && (
+                    <span className="text-xs italic text-muted-foreground">— {a.nota}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </Group>
+        )}
+
+        {/* Log de cambios */}
+        {log.length > 0 && (
+          <Group title={`Historial de cambios (${log.length})`}>
+            {log.map((entry, i) => (
+              <div key={i} className="col-span-2 border-b border-border pb-2 last:border-0 last:pb-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-card-foreground">
+                    {entry.campo}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">{entry.fecha}</span>
+                </div>
+                <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="line-through">{entry.valorAnterior || '(vacío)'}</span>
+                  <span>→</span>
+                  <span className="font-medium text-card-foreground">
+                    {entry.nuevoValor || '(vacío)'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </Group>
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
           <div className="flex items-center gap-2">
@@ -120,13 +193,25 @@ export function OrderDetailModal({
               ))}
             </Select>
           </div>
-          <button
-            onClick={() => onTicket(orden)}
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-brand-indigo to-brand-violet px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.02]"
-          >
-            <Receipt className="size-4" />
-            Reimprimir tiquete
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                onClose()
+                onEditar(orden)
+              }}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              <Pencil className="size-4" />
+              Modificar
+            </button>
+            <button
+              onClick={() => onTicket(orden)}
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-brand-indigo to-brand-violet px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.02]"
+            >
+              <Receipt className="size-4" />
+              Reimprimir tiquete
+            </button>
+          </div>
         </div>
       </div>
     </Modal>

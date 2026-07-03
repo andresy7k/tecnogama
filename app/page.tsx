@@ -15,12 +15,14 @@ import type { Orden } from '@/lib/types'
 export default function Page() {
   const [view, setView] = useState<ViewKey>('dashboard')
   const [selected, setSelected] = useState<Orden | null>(null)
+  const [editingOrden, setEditingOrden] = useState<Orden | null>(null)
   const {
     ordenes,
     status,
     saveOrden,
     deleteOrden,
     updateEstado,
+    updateOrden,
     importOrdenes,
   } = useOrdenes()
   const { cfg, saveConfig } = useConfig()
@@ -40,6 +42,16 @@ export default function Page() {
 
   const goEquipos = (o: Orden) => {
     setSelected(o)
+    setView('equipos')
+  }
+
+  const startEditar = (o: Orden) => {
+    setEditingOrden(o)
+    setView('editar')
+  }
+
+  const finishEditar = () => {
+    setEditingOrden(null)
     setView('equipos')
   }
 
@@ -71,6 +83,16 @@ export default function Page() {
             {view === 'nueva' && (
               <NuevaOrdenForm ordenes={ordenes} cfg={cfg} onSave={saveOrden} />
             )}
+            {view === 'editar' && editingOrden && (
+              <NuevaOrdenForm
+                ordenes={ordenes}
+                cfg={cfg}
+                onSave={saveOrden}
+                orden={editingOrden}
+                onUpdate={updateOrden}
+                onBack={finishEditar}
+              />
+            )}
             {view === 'equipos' && (
               <EquiposView
                 key={selected?.id ?? 'list'}
@@ -78,6 +100,7 @@ export default function Page() {
                 cfg={cfg}
                 onUpdateEstado={updateEstado}
                 onDelete={deleteOrden}
+                onEditar={startEditar}
               />
             )}
             {view === 'config' && (

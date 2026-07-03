@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { StatCard } from './stat-card'
 import { RecentOrders } from './recent-orders'
-import { formatPeso, parseNum } from '@/lib/format'
+import { formatPeso, parseNum, calcTotalAbonos } from '@/lib/format'
 import type { Orden } from '@/lib/types'
 
 function isToday(iso: string) {
@@ -54,10 +54,10 @@ export function DashboardView({
     (o) =>
       o.servicio.estado !== 'Entregado' &&
       parseNum(o.servicio.repCosto) > 0 &&
-      parseNum(o.servicio.abonoInicial) < parseNum(o.servicio.repCosto),
+      calcTotalAbonos(o.servicio.abonos ?? []) < parseNum(o.servicio.repCosto),
   )
   const totalPendiente = pendientesPago.reduce(
-    (sum, o) => sum + (parseNum(o.servicio.repCosto) - parseNum(o.servicio.abonoInicial)),
+    (sum, o) => sum + (parseNum(o.servicio.repCosto) - calcTotalAbonos(o.servicio.abonos ?? [])),
     0,
   )
 

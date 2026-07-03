@@ -13,18 +13,29 @@ import {
   Smartphone,
   AlertCircle,
   Receipt,
+  Plus,
+  History,
 } from 'lucide-react'
 import { Field, Input, Select, Textarea, Label } from '@/components/shared/form-field'
 import { PriorityBadge, PagoBadge } from '@/components/shared/status-badge'
 import { TicketModal } from '@/components/shared/ticket-modal'
 import { useToast } from '@/components/shared/toast'
-import { formatFecha, genId, calcEstadoPago, calcRestante, formatPeso } from '@/lib/format'
+import {
+  formatFecha,
+  genId,
+  calcEstadoPago,
+  calcRestante,
+  formatPeso,
+  calcTotalAbonos,
+} from '@/lib/format'
 import {
   ACCESORIOS,
   ESTADOS,
   ESTADOS_ESTETICOS,
   PRIORIDADES,
   TIPOS_EQUIPO,
+  type Abono,
+  type LogCambio,
   type NegocioConfig,
   type Orden,
   type Prioridad,
@@ -125,23 +136,55 @@ export function NuevaOrdenForm({
   ordenes,
   cfg,
   onSave,
+  orden,
+  onUpdate,
+  onBack,
 }: {
   ordenes: Orden[]
   cfg: NegocioConfig
   onSave: (o: Orden) => Promise<void> | void
+  orden?: Orden | null
+  onUpdate?: (o: Orden) => Promise<void> | void
+  onBack?: () => void
 }) {
   const { toast } = useToast()
+  const isEdit = Boolean(orden)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [errors, setErrors] = useState<Record<string, boolean>>({})
   const [shake, setShake] = useState(false)
   const [showClave, setShowClave] = useState(false)
   const [openSection, setOpenSection] = useState<number>(1)
   const [ticket, setTicket] = useState<Orden | null>(null)
+  const [abonos, setAbonos] = useState<Abono[]>(orden?.servicio.abonos ?? [])
+  const [log, setLog] = useState<LogCambio[]>(orden?.log ?? [])
+  const [nuevoAbonoMonto, setNuevoAbonoMonto] = useState('')
   const firstFieldRef = useRef<HTMLInputElement>(null)
   const hydrated = useRef(false)
 
-  // Restore draft from sessionStorage
+  // Pre-fill form when editing
   useEffect(() => {
+    if (orden) {
+      setForm({
+        cliente: { ...orden.cliente },
+        equipo: { ...orden.equipo, accesorios: [...orden.equipo.accesorios] },
+        falla: { ...orden.falla },
+        servicio: {
+          repCosto: orden.servicio.repCosto,
+          abonoInicial: orden.servicio.abonoInicial,
+          tecnico: orden.servicio.tecnico,
+          obs: orden.servicio.obs,
+          estado: orden.servicio.estado,
+        },
+      })
+      setAbonos(orden.servicio.abonos ?? [])
+      setLog(orden.log ?? [])
+      setOpenSection(1)
+    }
+  }, [orden])
+
+  // Restore draft from sessionStorage (only in create mode)
+  useEffect(() => {
+    if (isEdit) return
     try {
       const raw = sessionStorage.getItem(DRAFT_KEY)
       if (raw) setForm({ ...emptyForm, ...JSON.parse(raw) })
@@ -150,17 +193,17 @@ export function NuevaOrdenForm({
     }
     hydrated.current = true
     firstFieldRef.current?.focus()
-  }, [])
+  }, [isEdit])
 
-  // Persist draft
+  // Persist draft (only in create mode)
   useEffect(() => {
-    if (!hydrated.current) return
+    if (isEdit || !hydrated.current) return
     try {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form))
     } catch {
       /* ignore */
     }
-  }, [form])
+  }, [form, isEdit])
 
   const set = <S extends keyof FormState>(
     section: S,
@@ -188,7 +231,7 @@ export function NuevaOrdenForm({
   const s1 = Boolean(form.cliente.nombre && form.cliente.tel)
   const s2 = Boolean(form.equipo.tipo && form.equipo.marca && form.equipo.modelo)
   const s3 = Boolean(form.falla.desc)
-  const s4 = Boolean(form.servicio.repCosto || form.servicio.abonoInicial || form.servicio.tecnico)
+  const s4 = Boolean(form.servicio.repCosto || abonos.length > 0 || form.servicio.tecnico)
 
   const validate = () => {
     const e: Record<string, boolean> = {}
@@ -205,11 +248,85 @@ export function NuevaOrdenForm({
   const reset = () => {
     setForm(emptyForm)
     setErrors({})
+    setAbonos([])
+    setLog([])
     try {
       sessionStorage.removeItem(DRAFT_KEY)
     } catch {
       /* ignore */
     }
+  }
+
+  const addAbono = () => {
+    const monto = Number(nuevoAbonoMonto)
+    if (!monto || monto <= 0) {
+      toast({ message: 'Ingresa un monto válido', type: 'error' })
+      return
+    }
+    const now = new Date()
+    const abono: Abono = {
+      monto,
+      fecha: formatFecha(now),
+      fechaISO: now.toISOString(),
+    }
+    setAbonos((prev) => [...prev, abono])
+    setNuevoAbonoMonto('')
+    toast({ message: `Abono de ${formatPeso(monto)} registrado`, type: 'success' })
+  }
+
+  const removeAbono = (index: number) => {
+    setAbonos((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const buildLog = (oldOrden: Orden, newForm: FormState, newAbonos: Abono[]): LogCambio[] => {
+    const now = new Date()
+    const fecha = formatFecha(now)
+    const fechaISO = now.toISOString()
+    const changes: LogCambio[] = []
+
+    const compare = (campo: string, oldVal: string, newVal: string) => {
+      if (oldVal !== newVal) {
+        changes.push({ campo, valorAnterior: oldVal, nuevoValor: newVal, fecha, fechaISO })
+      }
+    }
+
+    compare('Cliente nombre', oldOrden.cliente.nombre, newForm.cliente.nombre)
+    compare('Cliente doc', oldOrden.cliente.doc, newForm.cliente.doc)
+    compare('Cliente tel', oldOrden.cliente.tel, newForm.cliente.tel)
+    compare('Cliente email', oldOrden.cliente.email, newForm.cliente.email)
+    compare('Tipo equipo', oldOrden.equipo.tipo, newForm.equipo.tipo)
+    compare('Marca', oldOrden.equipo.marca, newForm.equipo.marca)
+    compare('Modelo', oldOrden.equipo.modelo, newForm.equipo.modelo)
+    compare('Serial', oldOrden.equipo.serial, newForm.equipo.serial)
+    compare('Color', oldOrden.equipo.color, newForm.equipo.color)
+    compare('Estado estético', oldOrden.equipo.estado, newForm.equipo.estado)
+    compare('Obs. físicas', oldOrden.equipo.obsFisica, newForm.equipo.obsFisica)
+    compare('Falla', oldOrden.falla.desc, newForm.falla.desc)
+    compare('Diagnóstico', oldOrden.falla.diag, newForm.falla.diag)
+    compare('Clave', oldOrden.falla.clave, newForm.falla.clave)
+    compare('Prioridad', oldOrden.falla.prioridad, newForm.falla.prioridad)
+    compare('Costo reparación', oldOrden.servicio.repCosto, newForm.servicio.repCosto)
+    compare('Técnico', oldOrden.servicio.tecnico, newForm.servicio.tecnico)
+    compare('Obs. cliente', oldOrden.servicio.obs, newForm.servicio.obs)
+    compare('Estado', oldOrden.servicio.estado, newForm.servicio.estado)
+
+    const oldAccesorios = [...oldOrden.equipo.accesorios].sort().join(',')
+    const newAccesorios = [...newForm.equipo.accesorios].sort().join(',')
+    compare('Accesorios', oldAccesorios, newAccesorios)
+
+    const oldAbonado = calcTotalAbonos(oldOrden.servicio.abonos ?? [])
+    const newAbonado = calcTotalAbonos(newAbonos)
+    if (oldAbonado !== newAbonado) {
+      changes.push({
+        campo: 'Abonos totales',
+        valorAnterior: formatPeso(oldAbonado),
+        nuevoValor: formatPeso(newAbonado),
+        fecha,
+        fechaISO,
+      })
+    }
+
+    return changes
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -219,7 +336,6 @@ export function NuevaOrdenForm({
       setShake(true)
       setTimeout(() => setShake(false), 450)
       toast({ message: 'Por favor completa los campos obligatorios', type: 'error' })
-      // open the first incomplete section
       if (!s1) setOpenSection(1)
       else if (!s2) setOpenSection(2)
       else setOpenSection(3)
@@ -227,25 +343,72 @@ export function NuevaOrdenForm({
     }
 
     const now = new Date()
-    const orden: Orden = {
-      id: genId(ordenes),
-      fecha: formatFecha(now),
-      fechaISO: now.toISOString(),
-      cliente: { ...form.cliente },
-      equipo: { ...form.equipo, accesorios: [...form.equipo.accesorios] },
-      falla: { ...form.falla },
-      servicio: { ...form.servicio },
-    }
 
-    try {
-      await onSave(orden)
-      setTicket(orden)
-      toast({ message: `Orden ${orden.id} guardada correctamente`, type: 'success' })
-      reset()
-    } catch {
-      toast({ message: 'Error al guardar. Datos guardados localmente.', type: 'warning' })
-      setTicket(orden)
-      reset()
+    if (isEdit && orden && onUpdate) {
+      const newLog = buildLog(orden, form, abonos)
+      const updatedLog = [...(orden.log ?? []), ...newLog]
+      const updated: Orden = {
+        ...orden,
+        cliente: { ...form.cliente },
+        equipo: { ...form.equipo, accesorios: [...form.equipo.accesorios] },
+        falla: { ...form.falla },
+        servicio: {
+          repCosto: form.servicio.repCosto,
+          abonoInicial: form.servicio.abonoInicial,
+          abonos,
+          tecnico: form.servicio.tecnico,
+          obs: form.servicio.obs,
+          estado: form.servicio.estado,
+        },
+        modificado: true,
+        fechaModificacion: formatFecha(now),
+        log: updatedLog,
+      }
+
+      try {
+        await onUpdate(updated)
+        toast({ message: `Orden ${orden.id} actualizada correctamente`, type: 'success' })
+        onBack?.()
+      } catch {
+        toast({ message: 'Error al actualizar', type: 'error' })
+      }
+    } else {
+      const abonoInicialNum = Number(form.servicio.abonoInicial)
+      const abonosIniciales: Abono[] = abonoInicialNum > 0
+        ? [{
+            monto: abonoInicialNum,
+            fecha: formatFecha(now),
+            fechaISO: now.toISOString(),
+          }]
+        : []
+
+      const newOrden: Orden = {
+        id: genId(ordenes),
+        fecha: formatFecha(now),
+        fechaISO: now.toISOString(),
+        cliente: { ...form.cliente },
+        equipo: { ...form.equipo, accesorios: [...form.equipo.accesorios] },
+        falla: { ...form.falla },
+        servicio: {
+          repCosto: form.servicio.repCosto,
+          abonoInicial: form.servicio.abonoInicial,
+          abonos: abonosIniciales,
+          tecnico: form.servicio.tecnico,
+          obs: form.servicio.obs,
+          estado: form.servicio.estado,
+        },
+      }
+
+      try {
+        await onSave(newOrden)
+        setTicket(newOrden)
+        toast({ message: `Orden ${newOrden.id} guardada correctamente`, type: 'success' })
+        reset()
+      } catch {
+        toast({ message: 'Error al guardar. Datos guardados localmente.', type: 'warning' })
+        setTicket(newOrden)
+        reset()
+      }
     }
   }
 
@@ -256,13 +419,14 @@ export function NuevaOrdenForm({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Nueva orden
+            {isEdit ? `Editar orden ${orden?.id}` : 'Nueva orden'}
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Registra un equipo y genera el tiquete de servicio.
+            {isEdit
+              ? `Modificada el ${orden?.fechaModificacion ?? 'N/A'}`
+              : 'Registra un equipo y genera el tiquete de servicio.'}
           </p>
         </div>
-        {/* Progress */}
         <div className="flex items-center gap-1.5">
           {[s1, s2, s3, s4].map((done, i) => (
             <div
@@ -545,7 +709,7 @@ export function NuevaOrdenForm({
                   $
                 </span>
                 <Input
-              id="abonoInicial"
+                  id="abonoInicial"
                   type="number"
                   min="0"
                   value={form.servicio.abonoInicial}
@@ -564,14 +728,121 @@ export function NuevaOrdenForm({
               />
             </Field>
           </div>
-          {(form.servicio.repCosto || form.servicio.abonoInicial) && (
+
+          {/* Abonos */}
+          <div className="mt-4">
+            <Label>Abonos registrados</Label>
+            {abonos.length === 0 ? (
+              <p className="mt-1 text-xs text-muted-foreground">No hay abonos registrados aún.</p>
+            ) : (
+              <div className="mt-2 flex flex-col gap-2">
+                {abonos.map((a, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded-lg border border-border bg-background/50 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-card-foreground">
+                        {formatPeso(a.monto)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{a.fecha}</span>
+                    </div>
+                    {isEdit && (
+                      <button
+                        type="button"
+                        onClick={() => removeAbono(i)}
+                        className="text-muted-foreground hover:text-brand-danger"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {isEdit && (
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+                <Field label="Nuevo abono" htmlFor="nuevoAbono" className="flex-1">
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
+                      $
+                    </span>
+                    <Input
+                      id="nuevoAbono"
+                      type="number"
+                      min="0"
+                      value={nuevoAbonoMonto}
+                      onChange={(e) => setNuevoAbonoMonto(e.target.value)}
+                      placeholder="Monto"
+                      className="pl-7"
+                    />
+                  </div>
+                </Field>
+                <button
+                  type="button"
+                  onClick={addAbono}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-brand-indigo bg-brand-indigo/10 px-4 py-2.5 text-sm font-semibold text-brand-indigo transition-colors hover:bg-brand-indigo/20"
+                >
+                  <Plus className="size-4" />
+                  Agregar
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Resumen de pago */}
+          {(form.servicio.repCosto || form.servicio.abonoInicial || abonos.length > 0) && (
             <div className="mt-4 flex items-center gap-4 rounded-xl border border-border bg-background/50 px-4 py-3">
-              <PagoBadge estado={calcEstadoPago(form.servicio.repCosto, form.servicio.abonoInicial)} />
+              <PagoBadge
+                estado={calcEstadoPago(
+                  form.servicio.repCosto,
+                  isEdit
+                    ? abonos
+                    : [
+                        ...abonos,
+                        ...(Number(form.servicio.abonoInicial) > 0
+                          ? [{
+                              monto: Number(form.servicio.abonoInicial),
+                              fecha: '',
+                              fechaISO: '',
+                            }]
+                          : []),
+                      ],
+                )}
+              />
               <span className="text-sm text-muted-foreground">
-                Restante: <span className="font-bold text-card-foreground">{formatPeso(calcRestante(form.servicio.repCosto, form.servicio.abonoInicial))}</span>
+                Abonado:{' '}
+                <span className="font-bold text-card-foreground">
+                  {formatPeso(
+                    calcTotalAbonos(abonos) + (isEdit ? 0 : Number(form.servicio.abonoInicial) || 0),
+                  )}
+                </span>
+              </span>
+              <span className="text-sm text-muted-foreground">
+                Restante:{' '}
+                <span className="font-bold text-card-foreground">
+                  {formatPeso(
+                    calcRestante(
+                      form.servicio.repCosto,
+                      isEdit
+                        ? abonos
+                        : [
+                            ...abonos,
+                            ...(Number(form.servicio.abonoInicial) > 0
+                              ? [{
+                                  monto: Number(form.servicio.abonoInicial),
+                                  fecha: '',
+                                  fechaISO: '',
+                                }]
+                              : []),
+                          ],
+                    ),
+                  )}
+                </span>
               </span>
             </div>
           )}
+
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Observaciones para el cliente" htmlFor="obsCliente">
               <Textarea
@@ -596,17 +867,62 @@ export function NuevaOrdenForm({
             </Field>
           </div>
         </SectionCard>
+
+        {/* Log de cambios (solo en modo edición) */}
+        {isEdit && log.length > 0 && (
+          <SectionCard
+            num="05"
+            title="Historial de cambios"
+            subtitle={`${log.length} cambio${log.length !== 1 ? 's' : ''} registrado${log.length !== 1 ? 's' : ''}`}
+            icon={History}
+            complete={false}
+            open={openSection === 5}
+            onToggle={() => setOpenSection(openSection === 5 ? 0 : 5)}
+          >
+            <div className="flex flex-col gap-2">
+              {log.map((entry, i) => (
+                <div
+                  key={i}
+                  className="rounded-lg border border-border bg-background/50 px-3 py-2 text-xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-card-foreground">{entry.campo}</span>
+                    <span className="text-muted-foreground">{entry.fecha}</span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 text-muted-foreground">
+                    <span className="line-through">{entry.valorAnterior || '(vacío)'}</span>
+                    <span>→</span>
+                    <span className="font-medium text-card-foreground">
+                      {entry.nuevoValor || '(vacío)'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        )}
       </motion.div>
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <button
-          type="button"
-          onClick={reset}
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-        >
-          <Trash2 className="size-4" />
-          Limpiar formulario
-        </button>
+        {isEdit && onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+          >
+            Cancelar
+          </button>
+        )}
+        {!isEdit && (
+          <button
+            type="button"
+            onClick={reset}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+          >
+            <Trash2 className="size-4" />
+            Limpiar formulario
+          </button>
+        )}
         <motion.button
           type="submit"
           whileHover={{ scale: 1.02 }}
@@ -614,7 +930,7 @@ export function NuevaOrdenForm({
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-brand-indigo to-brand-violet px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-shadow hover:shadow-lg"
         >
           <Save className="size-4" />
-          Guardar y generar tiquete
+          {isEdit ? 'Guardar cambios' : 'Guardar y generar tiquete'}
         </motion.button>
       </div>
 
