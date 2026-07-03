@@ -193,26 +193,41 @@
 
 /* ---- Print styles for ticket ---- */
 @media print {
-  body * {
-    visibility: hidden;
+  body > * {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   #ticket-print,
   #ticket-print * {
-    visibility: visible;
+    visibility: visible !important;
+    display: revert !important;
   }
   #ticket-print {
-    position: fixed;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 300px;
-    padding: 8px;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    color: #000;
-    background: #fff;
+    position: fixed !important;
+    top: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 300px !important;
+    max-width: 100% !important;
+    padding: 8px !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: 11px !important;
+    color: #000 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    border: none !important;
+    z-index: 999999 !important;
   }
-  .no-print {
+  .no-print,
+  .no-print * {
     display: none !important;
+  }
+  @page {
+    margin: 5mm;
+    size: 80mm auto;
   }
 }
