@@ -22,8 +22,8 @@ function Dashed() {
 function buildTicketHtml(orden: Orden, cfg: NegocioConfig): string {
   const abonos = orden.servicio.abonos ?? []
   const abonosHtml = abonos.length > 0
-    ? abonos.map((a, i) => `<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="font-weight:600;text-transform:uppercase;color:#6b7280">Abono ${i + 1}</span><span style="color:#111827">${formatPeso(a.monto)} — ${a.fecha}</span></div>`).join('') +
-      `<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="font-weight:600;text-transform:uppercase;color:#6b7280">Total abonado</span><span style="color:#111827">${formatPeso(calcTotalAbonos(abonos))}</span></div>`
+    ? abonos.map((a, i) => `<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="font-weight:700;text-transform:uppercase;color:#1f2937">Abono ${i + 1}</span><span style="color:#000;font-weight:600">${formatPeso(a.monto)} — ${a.fecha}</span></div>`).join('') +
+      `<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="font-weight:700;text-transform:uppercase;color:#1f2937">Total abonado</span><span style="color:#000;font-weight:600">${formatPeso(calcTotalAbonos(abonos))}</span></div>`
     : ''
 
   return `<!DOCTYPE html>
@@ -33,11 +33,11 @@ function buildTicketHtml(orden: Orden, cfg: NegocioConfig): string {
 <title>Ticket ${orden.id}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Courier New', monospace; font-size: 11px; color: #000; background: #fff; padding: 10px; width: 300px; }
+  body { font-family: 'Courier New', monospace; font-size: 12px; color: #000; background: #fff; padding: 10px; width: 300px; }
   .row { display: flex; justify-content: space-between; gap: 16px; padding: 2px 0; }
-  .label { font-weight: 600; text-transform: uppercase; color: #6b7280; font-size: 10px; }
-  .value { text-align: right; color: #111827; }
-  .dashed { margin: 8px 0; border-top: 1px dashed #d1d5db; }
+  .label { font-weight: 700; text-transform: uppercase; color: #1f2937; font-size: 11px; }
+  .value { text-align: right; color: #000; font-weight: 600; }
+  .dashed { margin: 8px 0; border-top: 1px dashed #374151; }
   .center { text-align: center; }
   .bold { font-weight: bold; }
   @media print { @page { margin: 5mm; size: 80mm auto; } }
@@ -46,9 +46,9 @@ function buildTicketHtml(orden: Orden, cfg: NegocioConfig): string {
 <body>
   <div class="center">
     ${cfg.logo ? `<img src="${cfg.logo}" style="max-height:48px;margin:0 auto 8px;display:block">` : ''}
-    <div class="bold" style="font-size:14px">${cfg.nombre}</div>
-    ${cfg.slogan ? `<div style="font-size:10px;color:#6b7280;margin-top:2px">${cfg.slogan}</div>` : ''}
-    <div style="font-size:10px;color:#4b5563;margin-top:4px">
+    <div class="bold" style="font-size:16px;color:#000">${cfg.nombre}</div>
+    ${cfg.slogan ? `<div style="font-size:10px;color:#374151;margin-top:2px">${cfg.slogan}</div>` : ''}
+    <div style="font-size:10px;color:#1f2937;margin-top:4px">
       ${cfg.telefono ? `<div>Tel: ${cfg.telefono}</div>` : ''}
       ${cfg.direccion ? `<div>${cfg.direccion}</div>` : ''}
       ${cfg.ciudad ? `<div>${cfg.ciudad}</div>` : ''}
@@ -57,9 +57,9 @@ function buildTicketHtml(orden: Orden, cfg: NegocioConfig): string {
 
   <div class="dashed"></div>
   <div class="center">
-    <div style="font-size:10px;text-transform:uppercase;color:#6b7280">Orden de servicio</div>
-    <div class="bold" style="font-size:18px;color:#4f46e5">${orden.id}</div>
-    <div style="font-size:10px;color:#6b7280">${orden.fecha}</div>
+    <div style="font-size:11px;text-transform:uppercase;color:#374151;font-weight:700">Orden de servicio</div>
+    <div class="bold" style="font-size:20px;color:#000">${orden.id}</div>
+    <div style="font-size:10px;color:#374151">${orden.fecha}</div>
   </div>
 
   <div class="dashed"></div>
@@ -78,10 +78,10 @@ function buildTicketHtml(orden: Orden, cfg: NegocioConfig): string {
   ${orden.equipo.accesorios.length > 0 ? `<div class="row"><span class="label">Accesorios</span><span class="value">${orden.equipo.accesorios.join(', ')}</span></div>` : ''}
 
   <div class="dashed"></div>
-  <div style="font-size:11px">
-    <div class="bold" style="text-transform:uppercase;color:#6b7280;font-size:10px">Falla reportada</div>
-    <div style="margin-top:2px;color:#111827">${orden.falla.desc}</div>
-    ${orden.falla.diag ? `<div class="bold" style="text-transform:uppercase;color:#6b7280;font-size:10px;margin-top:4px">Diagnóstico</div><div style="margin-top:2px;color:#111827">${orden.falla.diag}</div>` : ''}
+  <div style="font-size:12px">
+    <div class="bold" style="text-transform:uppercase;color:#374151;font-size:11px">Falla reportada</div>
+    <div style="margin-top:2px;color:#000">${orden.falla.desc}</div>
+    ${orden.falla.diag ? `<div class="bold" style="text-transform:uppercase;color:#374151;font-size:11px;margin-top:4px">Diagnóstico</div><div style="margin-top:2px;color:#000">${orden.falla.diag}</div>` : ''}
   </div>
 
   <div class="dashed"></div>
@@ -92,9 +92,9 @@ function buildTicketHtml(orden: Orden, cfg: NegocioConfig): string {
   ${orden.servicio.tecnico ? `<div class="row"><span class="label">Técnico</span><span class="value">${orden.servicio.tecnico}</span></div>` : ''}
   <div class="row"><span class="label">Estado actual</span><span class="value">${orden.servicio.estado}</span></div>
 
-  ${cfg.ticketNota ? `<div class="dashed"></div><div class="center" style="font-size:9px;color:#6b7280;line-height:1.4">${cfg.ticketNota}</div>` : ''}
+  ${cfg.ticketNota ? `<div class="dashed"></div><div class="center" style="font-size:9px;color:#374151;font-weight:600;line-height:1.4">${cfg.ticketNota}</div>` : ''}
   <div class="dashed"></div>
-  <div class="center" style="font-size:9px;color:#9ca3af">Generado con Tecnogama</div>
+  <div class="center" style="font-size:9px;color:#6b7280">Generado con Tecnogama</div>
 </body>
 </html>`
 }
