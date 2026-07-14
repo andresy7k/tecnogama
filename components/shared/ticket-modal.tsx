@@ -44,7 +44,7 @@ function buildTicketHtml(orden: Orden, cfg: NegocioConfig): string {
 </head>
 <body>
   <div class="center">
-    ${cfg.logo ? `<img src="${cfg.logo}" style="max-height:48px;margin:0 auto 8px;display:block">` : ''}
+    ${cfg.logo ? `<img src="${cfg.logo}" style="max-height:80px;max-width:200px;margin:0 auto 8px;display:block;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges">` : ''}
     <div style="font-size:16px">${cfg.nombre}</div>
     ${cfg.slogan ? `<div style="font-size:10px;margin-top:2px">${cfg.slogan}</div>` : ''}
     <div style="font-size:10px;margin-top:4px">
@@ -135,7 +135,7 @@ export function TicketModal({
             <img
               src={cfg.logo || '/placeholder.svg'}
               alt={cfg.nombre}
-              className="mx-auto mb-2 h-12 w-auto object-contain"
+              className="mx-auto mb-2 h-20 w-auto object-contain"
             />
           ) : null}
           <h3 className="text-base font-bold tracking-tight">{cfg.nombre}</h3>

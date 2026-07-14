@@ -15,7 +15,7 @@ export function TicketPreview({ cfg }: { cfg: NegocioConfig }) {
             <img
               src={cfg.logo || '/placeholder.svg'}
               alt={cfg.nombre}
-              className="mx-auto mb-2 h-10 w-auto object-contain"
+              className="mx-auto mb-2 h-14 w-auto object-contain"
             />
           ) : null}
           <h3 className="text-sm font-bold">{cfg.nombre || 'Nombre del negocio'}</h3>
